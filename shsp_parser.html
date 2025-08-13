@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>parser</title>
+	</head>
+	<script>	
+		function download(filename) {
+			const speakerlist = {
+			"JOHN":"JOHNEGBERT",
+			"ROSE":"ROSELALONDE",
+			"DAVE":"DAVESTRIDER",
+			"JADE":"JADEHARLEY",
+			"LIZBET":"GF"
+			}
+			
+			let concathack = ""
+			let newline = "\n"
+			let tabchar = "	"
+			let messageCount = 0
+			let messages = ""
+			for (let i = 0; i < dialoglog.value.length; i++) {
+				if (dialoglog.value[i] == newline) {
+					messageCount++
+				}
+			}
+			
+			let FirstPassArray = dialoglog.value.split("\n")
+			
+			let speaker = true
+			let speakers = []
+			let dialogs = []
+			let currentLine = FirstPassArray[0].toString().split(": ")
+			for (let i = 1; i <= messageCount; i++) {
+				if (speaker == true) {
+					speakers.push(currentLine[0]);
+					speaker = false
+				}
+				if (speaker == false) {
+					dialogs.push(currentLine[1]);
+					speaker = true		
+					currentLine = FirstPassArray[i].toString().split(": ")
+				}
+				console.log(speakers[i])
+			}
+			for (i=0; i < messageCount; i++) {
+			  messages += 
+				tabchar + tabchar + tabchar + tabchar + '{' + newline + 
+					tabchar + tabchar + tabchar + tabchar + tabchar + '"class": "' + speakerlist[speakers[i]] + '",' + newline +
+					tabchar + tabchar + tabchar + tabchar + tabchar + '"text": "' + speakers[i] + ": " + dialogs[i] + '"' + newline + 
+				tabchar + tabchar + tabchar + tabchar + '}'
+			  if (i < messageCount-1) {
+				messages += ',' + newline 
+			  }
+			}
+			console.log(messages)
+			
+			if (date.value == "") {
+				date.value = new Date().toLocaleDateString()
+			}
+			
+			let jsonContents = concathack.concat(
+			'{', newline,
+				tabchar, '"call": "', call.value, '",', newline,
+				tabchar, '"panel": ', panels.value, newline,
+				tabchar, '"style": "', style.value, '",', newline,
+				tabchar, '"response": "', response.value, '",', newline,
+				tabchar, '"date": "', date.value, '",', newline,
+				tabchar, '"chatlog": [', newline, 
+					tabchar, "{", newline, 
+					tabchar, tabchar, '"chat_name": "', dialogname.value, '",', newline,
+					tabchar, tabchar, '"messages": [', newline,
+					messages, newline,
+					tabchar, tabchar, tabchar, ']', newline,
+				tabchar, tabchar, "}", newline, 
+			tabchar, "]", newline, 
+			'}'
+			) 
+			
+			var element = document.createElement('a');
+			element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(jsonContents));
+			element.setAttribute('download', filename);
+
+			element.style.display = 'none';
+			document.body.appendChild(element);
+
+			element.click();
+
+			document.body.removeChild(element);
+		}
+	</script>
+	
+	<style>
+	body {
+		margin: 0;
+		color: #e8e6e3;
+		background-color: #181a1b;
+	}
+	
+	.center {
+		margin: 0;
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+	}
+	
+	label {
+		display: block;
+		width: 100%;
+		margin-bottom: 5px;
+	}
+	
+	input {
+		display: block;
+		width: 1000px;
+		height: 30px;
+		margin-bottom: 15px;
+		background-color: #2B2A33;
+		border: #4E4D51;
+		color: #e8e6e3;
+		
+	}
+	
+	input :focus {
+		outline: solid 1px #969593;
+		border: #4E4D51;
+	}
+	
+	textarea {
+		width: 1000px;
+		height: 300px;
+		resize: vertical;
+		margin-bottom: 15px;
+		background-color: #2B2A33;
+		border: #4E4D51;
+		color: #e8e6e3;
+		outline: solid 1px #969593;
+	}
+	</style>
+	
+	<body>
+		<div class="center">
+			<form action="/action_page.php">
+				<label for="call">Call (header/title)</label>
+				<input type="text" id="call" name="call">
+				
+				<label for="style">Style (references a css file)</label>
+				<input type="text" id="style" name="style">
+				
+				<label for="response">Response (that text at the bottom of the page)</label>
+				<input type="text" id="response" name="response">
+				
+				<label for="dialogname">Chatlog Name (i.e. Pesterlog, Dialoglog, etc — Be sure to capitalise the first letter)</label>
+				<input type="text" id="dialogname" name="dialogname">
+				
+				<label for="dialoglog">Dialog/Chatlog</label>
+				<textarea type="text" id="dialoglog" name="dialoglog" value=""></textarea>
+				
+				<label for="date">Custom Date (defaults to todays date)</label>
+				<input type="text" id="date" name="date">
+				
+				<label for="pagenumber">Page Number (for the json file)</label>
+				<input type="text" id="pagenumber" name="pagenumber" value="0"> 
+				
+				<label for="panels">Panel(s)</label>
+				<input type="text" id="panels" name="panels"> 
+
+				<input type="submit" onclick="download(pagenumber.value.concat('.json'))" value="Submit">
+			</form>
+		</div>
+	</body>
+</html>
