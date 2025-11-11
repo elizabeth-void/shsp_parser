@@ -4,84 +4,109 @@
 	<head>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>parser</title>
+		<title>shsp parser - elizabeth's website</title>
+		<link href="/css/lizbetstuck.css" rel="stylesheet" type="text/css" media="all">
+		<link href="/css/fonts.css" rel="stylesheet" type="text/css" media="all">
 	</head>
-	<script>	
-		function download(filename) {
+	<script>
+		
+		document.addEventListener("DOMContentLoaded", (event) => {
+			field_sizing("dialoglog")
+		});
+		
+		function field_sizing(elementId) {
+			document.getElementById(elementId).style.height = 0;
+			document.getElementById(elementId).style.height = document.getElementById(elementId).scrollHeight + "px";
+		};
+		
+		function DownloadJSON(filename) {
 			const speakerlist = {
-			"JOHN":"JOHNEGBERT",
-			"ROSE":"ROSELALONDE",
-			"DAVE":"DAVESTRIDER",
-			"JADE":"JADEHARLEY",
-			"LIZBET":"GF"
+			"JOHN": "JOHNEGBERT",
+			"ROSE": "ROSELALONDE",
+			"DAVE": "DAVESTRIDER",
+			"JADE": "JADEHARLEY",
+			"LIZBET": "LIZBETABYSSE"
 			}
 			
 			let concathack = ""
 			let newline = "\n"
 			let tabchar = "	"
 			let messageCount = 0
-			let messages = ""
-			for (let i = 0; i < dialoglog.value.length; i++) {
+			let messages = []
+			for (let i = 0; i <= dialoglog.value.length; i++) {
 				if (dialoglog.value[i] == newline) {
 					messageCount++
+					console.log("WOOMY")
+				};
+				if (i == dialoglog.value.length & !dialoglog.value[i] == newline) {
+					messageCount++
+					console.log("VEEMO")
 				}
+				console.log("messageCount: "+messageCount)
 			}
 			
-			let FirstPassArray = dialoglog.value.split("\n")
+			let FirstPassArray = dialoglog.value.split("\n") // has been seperated at the newline
 			
-			let speaker = true
+			let speaker;
 			let speakers = []
 			let dialogs = []
-			let currentLine = FirstPassArray[0].toString().split(": ")
-			for (let i = 1; i <= messageCount; i++) {
-				if (speaker == true) {
-					speakers.push(currentLine[0]);
-					speaker = false
-				}
-				if (speaker == false) {
-					dialogs.push(currentLine[1]);
-					speaker = true		
-					currentLine = FirstPassArray[i].toString().split(": ")
-				}
-				console.log(speakers[i])
-			}
-			for (i=0; i < messageCount; i++) {
-			  messages += 
-				tabchar + tabchar + tabchar + tabchar + '{' + newline + 
-					tabchar + tabchar + tabchar + tabchar + tabchar + '"class": "' + speakerlist[speakers[i]] + '",' + newline +
-					tabchar + tabchar + tabchar + tabchar + tabchar + '"text": "' + speakers[i] + ": " + dialogs[i] + '"' + newline + 
-				tabchar + tabchar + tabchar + tabchar + '}'
-			  if (i < messageCount-1) {
-				messages += ',' + newline 
+			let currentLine; // has been seperated at the speaker
+			
+			for (let i = 0; i < messageCount; i++) {
+			  if (FirstPassArray[i].search(":") != -1) {
+  			  currentLine = FirstPassArray[i].split(": ")
+  			  speakers.push(currentLine[0]);
+  			  dialogs.push(currentLine[1]);
+  			  
+  			  console.log("FirstPassArray[i]: "+FirstPassArray[i])
+  			  
+    			console.log("currentLine: "+currentLine)
+  				console.log("speakers[i]: "+speakers[i])
+  				console.log("dialogs[i]: "+dialogs[i])
 			  }
 			}
-			console.log(messages)
+			
+			for (let i = 0; i < messageCount; i++) {
+			  let speak = speakerlist[speakers[i]]
+			  if (speak == undefined) { speak = speakers[i] }
+			  messages[i] = {
+			    "class": speak,
+			    "text": speakers[i]+": "+dialogs[i]
+			  }
+			}
+			
+			console.log("speakers: "+speakers)
+  		console.log("dialogs: "+dialogs)
+			console.log("FirstPassArray "+FirstPassArray)
+			console.log("messages: "+messages)
+			console.log("dialoglog.value.length: "+dialoglog.value.length)
 			
 			if (date.value == "") {
 				date.value = new Date().toLocaleDateString()
 			}
 			
-			let jsonContents = concathack.concat(
-			'{', newline,
-				tabchar, '"call": "', call.value, '",', newline,
-				tabchar, '"panel": ', panels.value, newline,
-				tabchar, '"style": "', style.value, '",', newline,
-				tabchar, '"response": "', response.value, '",', newline,
-				tabchar, '"date": "', date.value, '",', newline,
-				tabchar, '"chatlog": [', newline, 
-					tabchar, "{", newline, 
-					tabchar, tabchar, '"chat_name": "', dialogname.value, '",', newline,
-					tabchar, tabchar, '"messages": [', newline,
-					messages, newline,
-					tabchar, tabchar, tabchar, ']', newline,
-				tabchar, tabchar, "}", newline, 
-			tabchar, "]", newline, 
-			'}'
-			) 
+			let jsonContents = {};
 			
+			jsonContents["call"] = call.value;
+			jsonContents["panel"] = panels.value;
+			style.value = style.value != "" ? style.value.includes(".css") ? style.value.split(".")[0]+".css" : style.value+".css" : style.value
+			jsonContents["style"] = style.value
+			jsonContents["response"] = response.value;
+			jsonContents["date"] = date.value;
+			if (!messages == "") { 
+			  jsonContents["chatlog"] = [ { 
+			    "chat_name": dialogname.value,
+			    "messages": [ messages ]
+			   } ];
+			 };
+			
+			download(JSON.stringify(jsonContents, null, "\t"), filename+".json");
+		}
+		
+		function download(file, name) {
 			var element = document.createElement('a');
-			element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(jsonContents));
-			element.setAttribute('download', filename);
+			element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(file));
+			element.setAttribute('download', name);
 
 			element.style.display = 'none';
 			document.body.appendChild(element);
@@ -95,32 +120,68 @@
 	<style>
 	body {
 		margin: 0;
+		font-family: Courier;
+		font-weight: bold;
+		font-size: 15px;
+		text-align: center;
 		color: #e8e6e3;
 		background-color: #181a1b;
 	}
 	
-	.center {
-		margin: 0;
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
+	noscript {
+		z-index: 1;
+		margin: auto;
+		display: flex;
+		position: fixed;
+		align-items: center;
+		justify-content: center;
+		align-content: center;
+	}
+	
+	noscript p {
+		text-align: center;
+		max-width: 100%;
+		width: 100%;
+		height: 100%;
+		display: block !important;
+		z-index: 2;
+		margin: auto;
+		display: flex;
+		position: fixed;
+		align-items: center;
+		justify-content: center;
+		align-content: center;
+	}
+	
+	.parser {
+		max-width: 90%;
+		width: 60rem;
+		max-height: 100vh;
+		height: 100vh;
+		margin: auto;
+		display: block;
+		align-items: center;
+		justify-content: center;
+		align-content: center;
 	}
 	
 	label {
 		display: block;
 		width: 100%;
 		margin-bottom: 5px;
+		text-align: left;
 	}
 	
 	input {
 		display: block;
-		width: 1000px;
-		height: 30px;
+		width: 100%;
+		height: 2.2em;
 		margin-bottom: 15px;
 		background-color: #2B2A33;
 		border: #4E4D51;
 		color: #e8e6e3;
+		font-family: Courier;
+		font-weight: bold;
 		
 	}
 	
@@ -130,46 +191,70 @@
 	}
 	
 	textarea {
-		width: 1000px;
-		height: 300px;
-		resize: vertical;
+		overflow: hidden;
+		width: 100%;
+		min-height: 4rem;
+		resize: none;
 		margin-bottom: 15px;
 		background-color: #2B2A33;
-		border: #4E4D51;
+		border: 1px dashed gray;
 		color: #e8e6e3;
-		outline: solid 1px #969593;
+		font-size: 15px;
+		outline: none;
+		font-family: Courier;
+		font-weight: bold;
 	}
 	</style>
 	
 	<body>
-		<div class="center">
-			<form>
+		<noscript>
+			<style type="text/css">
+				.blocker {
+					background-color: black;
+					opacity: 50%;
+					width: 150vw;
+					height: 150vh;
+					margin: 0;
+					padding: 0;
+					position: fixed;
+					display: block;
+					z-index: 1;
+				}
+				.parser {
+					filter: blur(0.25rem);
+				}
+			</style>
+			<p>
+				JavaScript is disabled in your browser, which is required for this to work.
+			</p>
+			<div class="blocker"></div>
+		</noscript>
+			
+			<form class="parser">
+				<label for="style">Style (i.e css/dark, will auto append .css & replace anything after a period with .css)</label>
+				<input type="text" id="style" name="style">
+			
 				<label for="call">Call (header/title)</label>
 				<input type="text" id="call" name="call">
 				
-				<label for="style">Style (references a css file)</label>
-				<input type="text" id="style" name="style">
+				<label for="panels">Panel (i.e "panels/10_1.webp", MULTI PANELS ARE NOT IMPLEMENTED)</label>
+				<input type="text" id="panels" name="panels"> 
 				
-				<label for="response">Response (that text at the bottom of the page)</label>
+				<label for="response">Response (narration text below the panel)</label>
 				<input type="text" id="response" name="response">
 				
-				<label for="dialogname">Chatlog Name (i.e. Pesterlog, Dialoglog, etc — Be sure to capitalise the first letter)</label>
+				<label for="dialogname">Chatlog Name (i.e. Pesterlog, Dialoglog, etc — Be ware of capitalisation)</label>
 				<input type="text" id="dialogname" name="dialogname">
 				
 				<label for="dialoglog">Dialog/Chatlog</label>
-				<textarea type="text" id="dialoglog" name="dialoglog" value=""></textarea>
-				
-				<label for="date">Custom Date (defaults to todays date)</label>
-				<input type="text" id="date" name="date">
+				<textarea type="text" id="dialoglog" name="dialoglog" oninput="field_sizing('dialoglog')" value=""></textarea>
 				
 				<label for="pagenumber">Page Number (for the json file)</label>
 				<input type="text" id="pagenumber" name="pagenumber" value="0"> 
 				
-				<label for="panels">Panel(s)</label>
-				<input type="text" id="panels" name="panels"> 
-
-				<input type="submit" onclick="download(pagenumber.value.concat('.json'))" value="Submit">
+				<label for="date">Custom Date (defaults to todays date)</label>
+				<input type="text" id="date" name="date">
+				
+				<input type="button" onclick="DownloadJSON(pagenumber.value)" value="Download JSON">
 			</form>
-		</div>
-	</body>
 </html>
